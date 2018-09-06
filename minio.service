@@ -1,0 +1,59 @@
+#####
+#
+#	minio.service
+#
+#	下記のディレクトリに配置
+#	/etc/systemd/system/minio.service
+#
+#####
+
+
+[Unit]
+Description=Minio
+Documentation=https://docs.minio.io
+Wants=network-online.target
+After=network-online.target
+# MINIO本体の配置先
+AssertFileIsExecutable=/usr/local/bin/minio
+
+[Service]
+WorkingDirectory=/usr/local/
+
+User=minio-user
+Group=minio-user
+
+PermissionsStartOnly=true
+
+# configファイルの配置先
+EnvironmentFile=-/etc/default/minio.conf
+ExecStartPre=/bin/bash -c "[ -n \"${MINIO_VOLUMES}\" ] || echo \"Variable MINIO_VOLUMES not set in /etc/default/minio\""
+
+#####
+# サービスの起動設定
+#####
+#ExecStart=/usr/local/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
+ExecStart=/usr/local/bin/minio gateway azure $MINIO_OPTS # Azure用の設定
+
+# Let systemd restart this service only if it has ended with the clean exit code or signal.
+Restart=on-success
+
+StandardOutput=journal
+StandardError=inherit
+
+# Specifies the maximum file descriptor number that can be opened by this process
+LimitNOFILE=65536
+
+# Disable timeout logic and wait until process is stopped
+TimeoutStopSec=0
+
+# SIGTERM signal is used to stop Minio
+KillSignal=SIGTERM
+
+SendSIGKILL=no
+
+SuccessExitStatus=0
+
+[Install]
+WantedBy=multi-user.target
+
+# Built for ${project.name}-${project.version} (${project.name})
